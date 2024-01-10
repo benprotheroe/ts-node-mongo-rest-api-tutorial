@@ -33,7 +33,7 @@ export const login = async (req: express.Request, res: express.Response) => {
     await user.save();
 
     res.cookie("ANTONIO-AUTH", user.authentication.sessionToken, {
-      domain: "localhost",
+      domain: "30-different-mr0099930-benprotheroe.vercel.app",
       path: "/",
       httpOnly: true,
     });
@@ -58,7 +58,10 @@ export const logout = async (req: express.Request, res: express.Response) => {
 
     user.authentication.sessionToken = null;
     await user.save();
-    res.clearCookie("ANTONIO-AUTH", { domain: "localhost", path: "/" });
+    res.clearCookie("ANTONIO-AUTH", {
+      domain: "30-different-mr0099930-benprotheroe.vercel.app",
+      path: "/",
+    });
     return res.sendStatus(200);
   } catch (error) {
     console.log(error);
