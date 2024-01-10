@@ -10,7 +10,6 @@ export const isAuthenticated = async (
 ) => {
   try {
     const sessionToken = req.cookies["ANTONIO-AUTH"];
-    console.log("sessionToken", sessionToken);
     if (!sessionToken) {
       return res.sendStatus(403);
     }

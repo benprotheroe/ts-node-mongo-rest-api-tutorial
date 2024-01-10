@@ -3,10 +3,8 @@ import express from "express";
 import { get } from "lodash";
 
 export const addItem = async (req: express.Request, res: express.Response) => {
-  console.log("called");
   try {
     const { name } = req.body;
-    console.log("name", name);
     if (!name) {
       return res.sendStatus(400);
     }
@@ -35,10 +33,8 @@ export const getItemsByUser = async (
   req: express.Request,
   res: express.Response
 ) => {
-  console.log("called");
   try {
     const currentUserId = get(req, "identity._id") as string;
-    console.log(currentUserId);
 
     const items = await getListByUserId(currentUserId);
 

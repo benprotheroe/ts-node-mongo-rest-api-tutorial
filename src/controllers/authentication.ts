@@ -67,7 +67,6 @@ export const logout = async (req: express.Request, res: express.Response) => {
 };
 
 export const register = async (req: express.Request, res: express.Response) => {
-  console.log("called");
   try {
     const { email, password, username } = req.body;
 
