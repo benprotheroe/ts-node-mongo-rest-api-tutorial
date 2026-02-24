@@ -1,6 +1,17 @@
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { Firestore, getFirestore } from "firebase-admin/firestore";
 
+function normalizePrivateKey(value: string) {
+  const trimmed = value.trim();
+  const unquoted =
+    (trimmed.startsWith("\"") && trimmed.endsWith("\"")) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+      ? trimmed.slice(1, -1)
+      : trimmed;
+
+  return unquoted.replace(/\\n/g, "\n");
+}
+
 function initializeFirebaseAdmin() {
   if (getApps().length > 0) {
     return getApps()[0];
@@ -26,7 +37,9 @@ function initializeFirebaseAdmin() {
 
   const projectId = process.env.FIRESTORE_PROJECT_ID;
   const clientEmail = process.env.GCP_CLIENT_EMAIL;
-  const privateKey = process.env.GCP_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const privateKey = process.env.GCP_PRIVATE_KEY
+    ? normalizePrivateKey(process.env.GCP_PRIVATE_KEY)
+    : undefined;
 
   if (!projectId || !clientEmail || !privateKey) {
     throw new Error(
