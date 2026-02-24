@@ -18,7 +18,9 @@ export async function GET(request: NextRequest) {
     items: items.map((item) => ({
       id: item.id,
       name: item.name,
-      color: item.color ?? "Unknown",
+      colorName: item.colorName,
+      colorHex: item.colorHex,
+      rainbowBand: item.rainbowBand,
       createdAt: item.createdAt,
     })),
   });
@@ -39,13 +41,16 @@ export async function POST(request: NextRequest) {
   }
 
   const catalogMatch = await getCatalogEntryByName(parsed.data.name);
-  const resolvedColor = catalogMatch?.color ?? parsed.data.color;
 
-  if (!resolvedColor) {
+  const resolvedColorName = catalogMatch?.colorName ?? parsed.data.colorName;
+  const resolvedColorHex = catalogMatch?.colorHex ?? parsed.data.colorHex;
+  const resolvedBand = catalogMatch?.rainbowBand ?? parsed.data.rainbowBand;
+
+  if (!resolvedColorName || !resolvedColorHex || !resolvedBand) {
     return NextResponse.json(
       {
         success: false,
-        message: "Color is required for items not in the fruit and veg catalog.",
+        message: "Color name, color code, and rainbow band are required for items not in the catalog.",
       },
       { status: 400 }
     );
@@ -53,7 +58,9 @@ export async function POST(request: NextRequest) {
 
   const item = await createItem({
     name: parsed.data.name,
-    color: resolvedColor,
+    colorName: resolvedColorName,
+    colorHex: resolvedColorHex,
+    rainbowBand: resolvedBand,
     userId: user.id,
   });
 
@@ -63,7 +70,9 @@ export async function POST(request: NextRequest) {
       item: {
         id: item.id,
         name: item.name,
-        color: item.color,
+        colorName: item.colorName,
+        colorHex: item.colorHex,
+        rainbowBand: item.rainbowBand,
         createdAt: item.createdAt,
       },
     },

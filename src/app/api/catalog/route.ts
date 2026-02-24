@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { listCatalogEntries } from "@/lib/repositories/catalog";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const entries = await listCatalogEntries();
@@ -10,7 +12,9 @@ export async function GET() {
       entries: entries.map((entry) => ({
         id: entry.id,
         name: entry.name,
-        color: entry.color,
+        colorName: entry.colorName,
+        colorHex: entry.colorHex,
+        rainbowBand: entry.rainbowBand,
         type: entry.type,
       })),
     });
