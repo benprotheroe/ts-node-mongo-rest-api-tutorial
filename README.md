@@ -1,56 +1,47 @@
-# The Complete Guide To Building A REST API With Node, Express, TypeScript & MongoDB
+# 30different (Unified Next.js App)
 
-![Untitled design (1)](https://user-images.githubusercontent.com/23248726/219093382-a1874751-a2f0-4be6-8bed-3c266276b57c.png)
+Single-repo Next.js app for the 30different challenge: track 30+ different fruits and vegetables each week.
 
+## Stack
 
-This is a repository for a REST API tutorial using Node, Express, Typescript & MongoDB.
+- Next.js App Router (frontend + backend route handlers)
+- TypeScript
+- Google Cloud Firestore
+- Cookie-based signed JWT sessions (`jose`)
+- Input validation with `zod`
 
-[Video Link](https://youtu.be/b8ZUb_Okxro)
+## Required Environment Variables
 
-Features:
+Create `.env.local` with:
 
-- Environment, Typescript, Nodemon setup
-- MongoDB & Mongoose connect, Database creation
-- Controllers creation
-- Middlewares creation
-- Cookie based authentication
-- Postman testing
-- Create, Read, Update
-
-### Prerequisites
-
-**Node version 14.x**
-
-### Cloning the repository
-
-```shell
-git clone https://github.com/AntonioErdeljac/ts-node-mongo-rest-api-tutorial.git
+```bash
+SESSION_SECRET=your_long_random_secret
+FIRESTORE_PROJECT_ID=your-gcp-project-id
+GCP_CLIENT_EMAIL=service-account-name@your-gcp-project-id.iam.gserviceaccount.com
+GCP_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 ```
 
-### Install packages
+Alternative: set `FIRESTORE_SERVICE_ACCOUNT_KEY` to the full service account JSON string instead of the three variables above.
 
-```shell
-npm i
+## Run
+
+```bash
+npm install
+npm run dev
 ```
 
-### Setup MongoDB URL
+Open `http://localhost:3000`.
 
-In `src/index.ts`:
+## API Endpoints
 
-```js
-const MONGO_URL = ''; // DB URI
-```
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+- `GET /api/catalog`
+- `GET /api/items`
+- `POST /api/items`
 
-### Start the app
+## Legacy Code
 
-```shell
-npm start
-```
-
-## Available commands
-
-Running commands with npm `npm run [command]`
-
-| command         | description                              |
-| :-------------- | :--------------------------------------- |
-| `start`         | Starts a development instance of the app |
+Previous Express API implementation is preserved under `legacy/` for reference.
