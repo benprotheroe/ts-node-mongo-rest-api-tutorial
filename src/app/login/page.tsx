@@ -31,30 +31,56 @@ export default function LoginPage() {
   }
 
   return (
-    <main>
-      <h1>Log in</h1>
-      <form onSubmit={onSubmit} style={{ display: "grid", gap: 8, maxWidth: 360 }}>
-        <label htmlFor="email">Email</label>
-        <input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+    <main className="auth-shell">
+      <section className="auth-card">
+        <aside className="auth-side">
+          <h1>Color-first nutrition tracking</h1>
+          <p>
+            Log produce, visualize your ROYGBIV balance, and build a better weekly variety score.
+          </p>
+          <div className="pill-row" style={{ marginTop: 16 }}>
+            <span className="pill" style={{ color: "#eff8f3", background: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.22)" }}>
+              30-a-week focus
+            </span>
+            <span className="pill" style={{ color: "#eff8f3", background: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.22)" }}>
+              Rainbow balance
+            </span>
+          </div>
+        </aside>
 
-        <label htmlFor="password">Password</label>
-        <input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <div className="auth-main">
+          <h2>Log in</h2>
+          <p>Continue your weekly color plan.</p>
 
-        <button type="submit">Log in</button>
-      </form>
-      {error ? <p style={{ color: "#b00020" }}>{error}</p> : null}
+          <form onSubmit={onSubmit} className="form-grid" style={{ marginTop: 18 }}>
+            <input
+              className="field"
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              required
+            />
+
+            <input
+              className="field"
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              required
+            />
+
+            <button className="btn btn-primary" type="submit">
+              Log in
+            </button>
+          </form>
+
+          {error ? <p className="error">{error}</p> : null}
+        </div>
+      </section>
     </main>
   );
 }

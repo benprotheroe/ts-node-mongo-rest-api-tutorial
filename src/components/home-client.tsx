@@ -47,7 +47,7 @@ const COLOR_TO_RAINBOW: Record<string, (typeof RAINBOW_ORDER)[number]> = {
 };
 
 const introText =
-  "Eat 30 or more different fruits and vegetables each week, across the rainbow of colors. This app helps you log variety, not calories, and build a healthier routine.";
+  "Plan your week around food color variety. Add each fruit and vegetable and track how balanced your rainbow diet looks in one clear visual.";
 
 export default function HomeClient() {
   const [user, setUser] = useState<User | null>(null);
@@ -102,7 +102,7 @@ export default function HomeClient() {
     return COLOR_TO_RAINBOW[color.trim().toLowerCase()] ?? null;
   }
 
-  function getRainbowGradient() {
+  function getRainbowStats() {
     const totals = Object.fromEntries(RAINBOW_ORDER.map((color) => [color, 0])) as Record<
       (typeof RAINBOW_ORDER)[number],
       number
@@ -118,15 +118,21 @@ export default function HomeClient() {
     const includedBands = RAINBOW_ORDER.filter((band) => totals[band] > 0);
     const totalCount = includedBands.reduce((sum, band) => sum + totals[band], 0);
 
-    if (totalCount === 0) {
+    return { totals, includedBands, totalCount };
+  }
+
+  function getRainbowGradient() {
+    const stats = getRainbowStats();
+
+    if (stats.totalCount === 0) {
       return `linear-gradient(to right, ${RAINBOW_ORDER.map((band) => RAINBOW_HEX[band]).join(", ")})`;
     }
 
     let progress = 0;
     const stops: string[] = [];
 
-    for (const band of includedBands) {
-      const percentage = (totals[band] / totalCount) * 100;
+    for (const band of stats.includedBands) {
+      const percentage = (stats.totals[band] / stats.totalCount) * 100;
       const end = progress + percentage;
       const color = RAINBOW_HEX[band];
       stops.push(`${color} ${progress.toFixed(2)}% ${end.toFixed(2)}%`);
@@ -185,92 +191,140 @@ export default function HomeClient() {
 
   const matchedEntry = getMatchedCatalogEntry(newItem);
   const activeColor = matchedEntry?.color ?? manualColor;
+  const rainbowStats = getRainbowStats();
+  const uniqueColors = new Set(items.map((item) => getRainbowBand(item.color)).filter(Boolean)).size;
 
   if (!user) {
     return (
       <main>
-        <h1>30different</h1>
-        <p>{introText}</p>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={() => router.push("/signup")}>Sign up</button>
-          <button onClick={() => router.push("/login")}>Log in</button>
-        </div>
-        {error ? <p style={{ color: "#b00020" }}>{error}</p> : null}
+        <section className="hero-card">
+          <div className="hero-top">
+            <div>
+              <h1 className="hero-title">Build a better rainbow diet</h1>
+              <p className="hero-subtitle">{introText}</p>
+            </div>
+            <div className="pill-row">
+              <span className="pill">Color-first tracking</span>
+              <span className="pill">30 weekly target</span>
+            </div>
+          </div>
+
+          <div className="btn-row">
+            <button className="btn btn-primary" onClick={() => router.push("/signup")}>
+              Create account
+            </button>
+            <button className="btn" onClick={() => router.push("/login")}>
+              Log in
+            </button>
+          </div>
+        </section>
+        {error ? <p className="error">{error}</p> : null}
       </main>
     );
   }
 
   return (
-    <main>
-      <div style={{ width: 360, maxWidth: "100%", marginBottom: 16 }}>
-        <div
-          style={{
-            width: "100%",
-            height: 180,
-            borderRadius: "180px 180px 0 0",
-            background: getRainbowGradient(),
-            position: "relative",
-            overflow: "hidden",
-            border: "1px solid #d7dce5",
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              left: "12%",
-              right: "12%",
-              bottom: 0,
-              height: "72%",
-              background: "#f7fafc",
-              borderRadius: "180px 180px 0 0",
-            }}
-          />
+    <main className="page-grid">
+      <section className="hero-card">
+        <div className="hero-top">
+          <div>
+            <h1 className="hero-title">Welcome back, {user.username}</h1>
+            <p className="hero-subtitle">Your rainbow is weighted by what you ate this week.</p>
+          </div>
+          <div className="pill-row">
+            <span className="pill">Items: {items.length}</span>
+            <span className="pill">Rainbow colors: {uniqueColors}/7</span>
+            <span className="pill">Goal progress: {Math.min(100, Math.round((items.length / 30) * 100))}%</span>
+          </div>
         </div>
-      </div>
-      <h1>Welcome, {user.username}</h1>
-      <p>Track all the different fruit and veg varieties you have eaten this week.</p>
 
-      <form onSubmit={handleAddItem} style={{ display: "grid", gap: 8, maxWidth: 500 }}>
-        <input
-          type="text"
-          value={newItem}
-          onChange={(e) => setNewItem(e.target.value)}
-          list="produce-catalog"
-          placeholder="e.g. Strawberry"
-          required
-        />
-        <datalist id="produce-catalog">
-          {catalog.map((entry) => (
-            <option key={entry.id} value={entry.name} />
-          ))}
-        </datalist>
+        <div className="rainbow-stage">
+          <div className="rainbow-arc" style={{ background: getRainbowGradient() }}>
+            <div className="rainbow-cutout" />
+          </div>
+        </div>
+      </section>
 
-        <input
-          type="text"
-          value={activeColor}
-          onChange={(e) => setManualColor(e.target.value)}
-          placeholder="Color (auto-filled for known fruit/veg)"
-          disabled={Boolean(matchedEntry)}
-          required
-        />
+      <section className="content-grid">
+        <article className="card">
+          <h2>Add today&apos;s produce</h2>
+          <p>Pick from the catalog for automatic color mapping, or set color manually.</p>
 
-        <button type="submit">Add item</button>
-      </form>
+          <form onSubmit={handleAddItem} className="form-grid">
+            <input
+              className="field"
+              type="text"
+              value={newItem}
+              onChange={(e) => setNewItem(e.target.value)}
+              list="produce-catalog"
+              placeholder="e.g. Strawberry"
+              required
+            />
+            <datalist id="produce-catalog">
+              {catalog.map((entry) => (
+                <option key={entry.id} value={entry.name} />
+              ))}
+            </datalist>
 
-      <ul>
-        {items.map((item) => (
-          <li key={item.id}>
-            {item.name} ({item.color})
-          </li>
-        ))}
-      </ul>
+            <input
+              className="field"
+              type="text"
+              value={activeColor}
+              onChange={(e) => setManualColor(e.target.value)}
+              placeholder="Color (auto for known fruit/veg)"
+              disabled={Boolean(matchedEntry)}
+              required
+            />
 
-      <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={loadItems}>Refresh</button>
-        <button onClick={handleLogout}>Log out</button>
-      </div>
+            <div className="btn-row">
+              <button className="btn btn-primary" type="submit">
+                Add item
+              </button>
+              <button className="btn" type="button" onClick={loadItems}>
+                Refresh
+              </button>
+              <button className="btn" type="button" onClick={handleLogout}>
+                Log out
+              </button>
+            </div>
+          </form>
+          {error ? <p className="error">{error}</p> : null}
+        </article>
 
-      {error ? <p style={{ color: "#b00020" }}>{error}</p> : null}
+        <article className="card">
+          <h2>Your logged foods</h2>
+          <p>Every entry contributes to the rainbow in ROYGBIV order.</p>
+
+          {items.length === 0 ? (
+            <p className="empty">No produce logged yet. Add your first item to start the visual.</p>
+          ) : (
+            <ul className="list">
+              {items.map((item) => {
+                const band = getRainbowBand(item.color);
+                const dotColor = band ? RAINBOW_HEX[band] : "#a1a9a1";
+
+                return (
+                  <li key={item.id} className="list-item">
+                    <span className="item-left">
+                      <span className="color-dot" style={{ background: dotColor }} />
+                      <span>{item.name}</span>
+                    </span>
+                    <span className="muted">{item.color}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <div className="pill-row" style={{ marginTop: 12 }}>
+            {RAINBOW_ORDER.map((band) => (
+              <span key={band} className="pill">
+                {band}: {rainbowStats.totals[band]}
+              </span>
+            ))}
+          </div>
+        </article>
+      </section>
     </main>
   );
 }

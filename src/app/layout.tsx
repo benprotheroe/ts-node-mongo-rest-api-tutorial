@@ -14,15 +14,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <header
-          style={{
-            borderBottom: "1px solid #e2e8f0",
-            background: "#ffffff",
-            padding: "12px 24px",
-          }}
-        >
-          <nav style={{ maxWidth: 720, margin: "0 auto" }}>
-            <Link href="/">30different</Link>
+        <header className="topbar">
+          <nav className="topbar-inner">
+            <Link href="/" className="brand-link">
+              <span className="brand-pill" />
+              30different
+            </Link>
           </nav>
         </header>
         {children}
