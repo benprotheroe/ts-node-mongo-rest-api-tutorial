@@ -236,6 +236,12 @@ button {
   gap: 8px;
 }
 
+.insight-grid {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
 .list-item {
   display: flex;
   align-items: center;

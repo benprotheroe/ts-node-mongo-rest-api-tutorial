@@ -22,10 +22,15 @@ type Item = {
 type CatalogEntry = {
   id: string;
   name: string;
+  ukName: string;
+  normalizedAliases: string[];
   colorName: string;
   colorHex: string;
   rainbowBand: RainbowBand;
   type: "fruit" | "vegetable";
+  nutrients: string[];
+  plainBenefit: string;
+  scienceNote: string;
 };
 
 const RAINBOW_ORDER: RainbowBand[] = ["red", "orange", "yellow", "green", "blue", "indigo", "violet"];
@@ -53,7 +58,44 @@ const BAND_HUE_RANGE: Record<RainbowBand, { start: number; end: number; wraps?: 
 const introText =
   "Plan your week around food color variety. Add each fruit and vegetable and track how balanced your rainbow diet looks in one clear visual.";
 
-function hexToHue(hex: string) {
+type Insights = {
+  windowDays: number;
+  disclaimer: string;
+  totals: {
+    itemsInWindow: number;
+    colorDiversity: number;
+  };
+  colorCoverage: {
+    countsByBand: Record<RainbowBand, number>;
+    missingBands: RainbowBand[];
+  };
+  fruitVegBalance: {
+    fruitCount: number;
+    vegetableCount: number;
+    dominant: "fruit" | "vegetable" | "balanced" | "unknown";
+  };
+  suggestions: Array<{
+    kind: "missing_band" | "balance" | "variety";
+    title: string;
+    reason: string;
+    foods: Array<{
+      name: string;
+      ukName: string;
+      type: "fruit" | "vegetable";
+      rainbowBand: RainbowBand;
+      colorHex: string;
+      plainBenefit: string;
+    }>;
+  }>;
+  itemAdvice: Array<{
+    foodName: string;
+    nutrientFocus: string[];
+    plainBenefit: string;
+    scienceNote: string;
+  }>;
+};
+
+export function hexToHue(hex: string) {
   const valid = /^#([0-9A-Fa-f]{6})$/.test(hex);
   if (!valid) {
     return null;
@@ -85,10 +127,30 @@ function hexToHue(hex: string) {
   return (degrees + 360) % 360;
 }
 
+export function getBandProgress(colorHex: string, band: RainbowBand) {
+  const hue = hexToHue(colorHex);
+  if (hue === null) {
+    return 0.5;
+  }
+
+  const range = BAND_HUE_RANGE[band];
+
+  if (range.wraps) {
+    const adjustedHue = hue < range.start ? hue + 360 : hue;
+    const adjustedEnd = range.end + 360;
+    const progress = (adjustedHue - range.start) / (adjustedEnd - range.start);
+    return Math.max(0, Math.min(1, progress));
+  }
+
+  const progress = (hue - range.start) / (range.end - range.start);
+  return Math.max(0, Math.min(1, progress));
+}
+
 export default function HomeClient() {
   const [user, setUser] = useState<User | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [catalog, setCatalog] = useState<CatalogEntry[]>([]);
+  const [insights, setInsights] = useState<Insights | null>(null);
   const [newItem, setNewItem] = useState("");
   const [manualColorName, setManualColorName] = useState("");
   const [manualColorHex, setManualColorHex] = useState("#7cb342");
@@ -115,8 +177,7 @@ export default function HomeClient() {
     }
 
     setUser(meJson.user);
-    await loadCatalog();
-    await loadItems();
+    await Promise.all([loadCatalog(), loadItems(), loadInsights()]);
     setLoading(false);
   }
 
@@ -133,7 +194,15 @@ export default function HomeClient() {
   }
 
   function getMatchedCatalogEntry(name: string) {
-    return catalog.find((entry) => entry.name.toLowerCase() === name.trim().toLowerCase()) ?? null;
+    const normalized = name.trim().toLowerCase();
+    return (
+      catalog.find(
+        (entry) =>
+          entry.name.toLowerCase() === normalized ||
+          entry.ukName.toLowerCase() === normalized ||
+          entry.normalizedAliases.includes(normalized)
+      ) ?? null
+    );
   }
 
   function getRainbowStats() {
@@ -152,25 +221,6 @@ export default function HomeClient() {
   function getRainbowGradient() {
     if (items.length === 0) {
       return `linear-gradient(to right, ${RAINBOW_ORDER.map((band) => RAINBOW_HEX[band]).join(", ")})`;
-    }
-
-    function getBandProgress(colorHex: string, band: RainbowBand) {
-      const hue = hexToHue(colorHex);
-      if (hue === null) {
-        return 0.5;
-      }
-
-      const range = BAND_HUE_RANGE[band];
-
-      if (range.wraps) {
-        const adjustedHue = hue < range.start ? hue + 360 : hue;
-        const adjustedEnd = range.end + 360;
-        const progress = (adjustedHue - range.start) / (adjustedEnd - range.start);
-        return Math.max(0, Math.min(1, progress));
-      }
-
-      const progress = (hue - range.start) / (range.end - range.start);
-      return Math.max(0, Math.min(1, progress));
     }
 
     const orderedItems = [...items].sort((a, b) => {
@@ -215,6 +265,18 @@ export default function HomeClient() {
     setError(json.message ?? "Unable to load items.");
   }
 
+  async function loadInsights() {
+    const res = await fetch("/api/insights?window=30d", { cache: "no-store" });
+    const json = await res.json();
+
+    if (res.ok && json.success) {
+      setInsights(json.insights);
+      return;
+    }
+
+    setError(json.message ?? "Unable to load insights.");
+  }
+
   async function handleAddItem(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -252,7 +314,7 @@ export default function HomeClient() {
     setManualColorName("");
     setManualColorHex("#7cb342");
     setManualBand("green");
-    await loadItems();
+    await Promise.all([loadItems(), loadInsights()]);
   }
 
   async function handleLogout() {
@@ -310,6 +372,7 @@ export default function HomeClient() {
             <span className="pill">Items: {items.length}</span>
             <span className="pill">Rainbow colors: {uniqueColors}/7</span>
             <span className="pill">Goal progress: {Math.min(100, Math.round((items.length / 30) * 100))}%</span>
+            <span className="pill">30-day colors: {insights?.totals.colorDiversity ?? 0}</span>
           </div>
         </div>
 
@@ -321,6 +384,78 @@ export default function HomeClient() {
       </section>
 
       <section className="content-grid">
+        <article className="card">
+          <h2>30-day diet insights</h2>
+          <p>
+            {insights
+              ? `You logged ${insights.totals.itemsInWindow} items in the last ${insights.windowDays} days.`
+              : "Loading your latest insights..."}
+          </p>
+
+          {insights ? (
+            <div className="insight-grid">
+              <div className="list-item">
+                <span className="item-left">
+                  <span>Missing rainbow bands</span>
+                </span>
+                <span className="muted">
+                  {insights.colorCoverage.missingBands.length === 0
+                    ? "None"
+                    : insights.colorCoverage.missingBands.join(", ")}
+                </span>
+              </div>
+              <div className="list-item">
+                <span className="item-left">
+                  <span>Fruit vs veg</span>
+                </span>
+                <span className="muted">
+                  {insights.fruitVegBalance.fruitCount} fruit / {insights.fruitVegBalance.vegetableCount} veg
+                </span>
+              </div>
+              <div className="list-item">
+                <span className="item-left">
+                  <span>Distinct color score</span>
+                </span>
+                <span className="muted">{insights.totals.colorDiversity} unique RGB shades</span>
+              </div>
+            </div>
+          ) : null}
+
+          {insights?.suggestions.length ? (
+            <ul className="list" style={{ marginTop: 12 }}>
+              {insights.suggestions.map((suggestion) => (
+                <li key={suggestion.title} className="list-item" style={{ alignItems: "flex-start", flexDirection: "column" }}>
+                  <strong>{suggestion.title}</strong>
+                  <span className="muted">{suggestion.reason}</span>
+                  <span className="muted">
+                    Try:{" "}
+                    {suggestion.foods
+                      .slice(0, 3)
+                      .map((food) => `${food.ukName} (${food.rainbowBand})`)
+                      .join(", ")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {insights?.itemAdvice.length ? (
+            <ul className="list" style={{ marginTop: 12 }}>
+              {insights.itemAdvice.slice(0, 3).map((advice) => (
+                <li key={advice.foodName} className="list-item" style={{ alignItems: "flex-start", flexDirection: "column" }}>
+                  <strong>{advice.foodName}</strong>
+                  <span>{advice.plainBenefit}</span>
+                  <span className="muted">
+                    Science note: {advice.scienceNote} Key nutrients: {advice.nutrientFocus.join(", ")}.
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {insights ? <p className="muted" style={{ marginTop: 10 }}>{insights.disclaimer}</p> : null}
+        </article>
+
         <article className="card">
           <h2>Add today&apos;s produce</h2>
           <p>Known fruit/veg auto-fill an RGB color. For custom entries, set your own RGB and band.</p>
@@ -391,6 +526,9 @@ export default function HomeClient() {
               </button>
               <button className="btn" type="button" onClick={loadItems}>
                 Refresh
+              </button>
+              <button className="btn" type="button" onClick={loadInsights}>
+                Refresh insights
               </button>
               <button className="btn" type="button" onClick={handleLogout}>
                 Log out

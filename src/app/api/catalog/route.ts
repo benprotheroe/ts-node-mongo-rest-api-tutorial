@@ -12,10 +12,15 @@ export async function GET() {
       entries: entries.map((entry) => ({
         id: entry.id,
         name: entry.name,
+        ukName: entry.ukName,
+        normalizedAliases: entry.normalizedAliases,
         colorName: entry.colorName,
         colorHex: entry.colorHex,
         rainbowBand: entry.rainbowBand,
         type: entry.type,
+        nutrients: entry.nutrients,
+        plainBenefit: entry.plainBenefit,
+        scienceNote: entry.scienceNote,
       })),
     });
   } catch (error) {

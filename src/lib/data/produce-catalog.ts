@@ -1,9 +1,12 @@
+export type RainbowBand = "red" | "orange" | "yellow" | "green" | "blue" | "indigo" | "violet";
+export type ProduceType = "fruit" | "vegetable";
+
 export type ProduceCatalogEntry = {
   name: string;
   colorName: string;
   colorHex: string;
-  rainbowBand: "red" | "orange" | "yellow" | "green" | "blue" | "indigo" | "violet";
-  type: "fruit" | "vegetable";
+  rainbowBand: RainbowBand;
+  type: ProduceType;
 };
 
 export const DEFAULT_PRODUCE_CATALOG: ProduceCatalogEntry[] = [
